@@ -134,15 +134,7 @@ def _infer(
     for idi in pbar:
         optimizer.zero_grad()
         input_feat = (z1,z2)
-        # for idd, forward_rear in enumerate(forward_rears):
         output_feat = forward_rears(input_feat)
-        # if count == 0:
-        #     without_refinement = output_feat
-            # if False:
-            #     midz1, midz2 = output_feat
-            #     midz1, midz2 = midz1.to(devices[idd+1]), midz2.to(devices[idd+1])
-            #     input_feat = (midz1, midz2)
-            # else:        
         pred = output_feat
 
         if ref_lower_res is None:
@@ -156,7 +148,6 @@ def _infer(
         repeated_mask = mask.repeat(1,3,1,1)
         repeated_mask_downscaled = mask_downscaled.repeat(1,3,1,1)
         losses["ms_l1"] = _l1_loss(pred, pred_downscaled, ref_lower_res, repeated_mask, repeated_mask_downscaled, image, on_pred=True)
-        # loss = 0
         loss = sum(losses.values())
         pbar.set_description("Refining scale {} using scale {} ...current loss: {:.4f}".format(scale_ind+1, scale_ind, loss.item()))
         if idi < n_iters - 1:

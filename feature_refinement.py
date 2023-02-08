@@ -14,7 +14,7 @@ from utils.resize_utils import resize_mask, downscale, resize_image
 from utils.mask_utils import convert_to_1D
 from torchvision import transforms
 import losses
-from old_refinement import _infer
+from utils.refiner import _infer
 from utils.exr_to_jpg import return_exr_to_jpg
 from utils.jpg_to_exr import return_jpg_to_exr
 from utils.utils import convert_image
