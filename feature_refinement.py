@@ -155,6 +155,11 @@ class FeatureRefinement:
         n_steps -> defines the desired number of images to be produced. If an image during a step becomes smaller than the smallest size, it returns the images and masks created before this point.
         difference -> difference between each step.  Ex. If image size is (1024,1024), n_step is 3, smalles_size is (256,256) and difference is 256, It will produce image sizes of (1024,768,512)
 
+        Returns
+        -------
+        images -> The images created -> []
+        masks -> The masks created -> []
+        scales -> The scales of respective mages and masks -> []
         '''
         images = []
         masks = []
@@ -235,7 +240,7 @@ class FeatureRefinement:
         low_res_output = low_res_output.cpu().detach()
 
         save_image(low_res_output)
-        
+
         current_reference = low_res_output
         current_scale = size
         for id,(inter_image,inter_mask,scale) in enumerate(zip(images,masks,scales)):
