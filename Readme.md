@@ -20,7 +20,7 @@ conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch -y
 Create a config file, similar to sample_config.json, defining the losses and thier configurations
 
 
-```
+```json
 
 {
     "losses": {
@@ -58,12 +58,14 @@ You can refer to the lama training code for each loss configuration.
 
 If we dont want to specify losses and use the default loss we can define the sample_config.json as :-
 
-```
+```json
 {
     "losses": {
     }
 }
 ```
+
+To run :-
 
 ```python
 from feature_refinement import FeatureRefinement
