@@ -79,7 +79,7 @@ def _infer(
     image : torch.Tensor, mask : torch.Tensor, 
     forward_front : nn.Module, forward_rears : nn.Module, 
     ref_lower_res : torch.Tensor, devices : list, 
-    scale_ind : int, n_iters : int=15, lr : float=0.002,downsize = None):
+    scale_ind : int, n_iters : int=15, lr : float=0.002,downsize = None, losses = None):
 
     """Performs models with refinement at a given scale.
     Parameters
@@ -140,7 +140,7 @@ def _infer(
             without_refinement = output_feat
         if ref_lower_res is None:
             break
-        losses = {}
+        curr_loss = {}
         ######################### multi-scale #############################
         # scaled loss with downsampler
         pred_downscaled = _pyrdown(pred,downsize=downsize)
@@ -148,8 +148,14 @@ def _infer(
         mask_downscaled = _erode_mask(mask_downscaled, ekernel=ekernel)
         repeated_mask = mask.repeat(1,3,1,1)
         repeated_mask_downscaled = mask_downscaled.repeat(1,3,1,1)
-        losses["ms_l1"] = _l1_loss(pred.to(devices), pred_downscaled.to(devices), ref_lower_res.to(devices), repeated_mask.to(devices), repeated_mask_downscaled.to(devices), image.to(devices), on_pred=True)
-        loss = sum(losses.values())
+        
+        curr_loss["ms_l1"] = _l1_loss(pred.to(devices), pred_downscaled.to(devices), ref_lower_res.to(devices), repeated_mask.to(devices), repeated_mask_downscaled.to(devices), image.to(devices), on_pred=True)
+        
+        if losses is not None:
+            for key,loss in enumerate(losses):
+                curr_loss[loss] = losses[loss](pred_downscaled.to(devices), ref_lower_res.to(devices), repeated_mask_downscaled.to(devices))["loss"][loss]
+                
+        loss = sum(curr_loss.values())
         pbar.set_description("Refining scale {} using scale {} ...current loss: {:.4f}".format(scale_ind+1, scale_ind, loss.item()))
         if idi < n_iters - 1:
             loss.backward()

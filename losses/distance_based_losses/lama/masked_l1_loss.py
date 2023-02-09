@@ -25,4 +25,9 @@ class MaskedL1Loss(nn.Module):
                                  reduction=self.reduction)
         pixel_weights = mask * self.weight_missing + (1 -
                                                       mask) * self.weight_known
-        return (pixel_weights * per_pixel_l1).mean()
+        return {
+            "loss": {
+                "masked_l1_loss": (pixel_weights * per_pixel_l1).mean()
+            },
+            "values_to_log": dict()
+        }

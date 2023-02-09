@@ -27,19 +27,19 @@ class FeatureRefinement:
 
     Parameters
     ----------
-    config_path -> Path to the config file containing losses configs
     checkpoint_path -> path to the model checkpoint
     pretrained_lama -> wether to use pretrained lama.
+    config_path -> Path to the config file containing losses configs , default -> "sample_config.json"
     use_cuda -> Wether to use gpu or not
     model -> If given, uses this model istead of loading a model from checkpoint path.
     save_intermediate_output -> Wether to save the intermediate results.
     save_path -> path to save intermediate results
     '''
     def __init__(
-        self,
-        config_path, 
+        self, 
         checkpoint_path,
         use_cuda,
+        config_path="sample_config.json",
         model = None,
         pretrained_lama=False,
         save_intermediate_output = False,
@@ -51,19 +51,15 @@ class FeatureRefinement:
         self.save_intermediate_output = save_intermediate_output
         self.save_path = save_path
 
-        self.n_steps = n_steps
-        self.difference = difference
-        self.lr = lr
-
         self.transform = transforms.Compose([
         transforms.ToTensor()
         ])
 
         # loading model configuration
         self.configs = json.load(open(config_path, 'r'))
-        self.losses = []
+        self.losses = {}
         for key,loss in enumerate(self.configs["losses"]):
-            self.losses.append(losses.initialize_loss(loss = loss, **self.configs["losses"][loss]))
+            self.losses[self.configs["losses"][loss]["kind"]] = losses.initialize_loss(loss = loss, **self.configs["losses"][loss])
         print("Found the following losses : " ,self.losses)
         self.checkpoint_path = checkpoint_path
 
@@ -105,7 +101,7 @@ class FeatureRefinement:
             elif not found_first_resblock:
                 first_resblock_ind += 1
         encoder = model.model[0:first_resblock_ind+1]
-        decoder = model.model[first_resblock_ind:]
+        decoder = model.model[first_resblock_ind+n_resnet_blocks:]
         return encoder,decoder
     
     def freeze_module(self,module):
@@ -208,6 +204,10 @@ class FeatureRefinement:
         difference -> The difference between each image step. Ex. If image size is (1024,1024), n_step is 3, smalles_size is (256,256) and difference is 256, It will produce image sizes of (1024,768,512)
         n_iterations -> number of iterations to perform for optimisation
         lr -> Learning rate of the model.
+
+        Returns
+        -------
+        Returns the High res inpainted image -> nnumpy array
         '''
         # Conver tot jpg if pretrained lama
         if self.pretrained_lama:
@@ -215,7 +215,7 @@ class FeatureRefinement:
             _, high_res_image = convert_image(high_res_image)
 
         # Get images of different scales
-        images,masks,scales = self.create_images_pyramid(high_res_image,mask,smallest_size=size,n_steps=self.n_steps,difference=self.difference)
+        images,masks,scales = self.create_images_pyramid(high_res_image,mask,smallest_size=size,n_steps=n_steps,difference=difference)
 
         # get first reference image
 
@@ -236,10 +236,12 @@ class FeatureRefinement:
         # Get low res output
         
         low_res_output = self.model(masked_image)
-        low_res_output = mask * low_res_resized_mask + (1 - mask) * low_res_output
+        low_res_output = low_res_resized_mask * low_res_image + (1 - low_res_resized_mask) * low_res_output
         low_res_output = low_res_output.cpu().detach()
 
-        save_image(low_res_output)
+        if self.save_intermediate_output:
+            curr_save_path = os.path.join(self.save_path,"low_res-"+str(size)+".exr")
+            save_image(low_res_output,curr_save_path,pretrained_lama=self.pretrained_lama)
 
         current_reference = low_res_output
         current_scale = size
@@ -258,7 +260,7 @@ class FeatureRefinement:
             high_res_image = high_res_image.unsqueeze(0)
             
             # Get highres output
-            high_res_prediction,without_refinement = _infer(high_res_image,resized_mask,self.encoder,self.decoder,current_reference,self.device,id,n_iters=n_iterations,downsize=current_scale,lr = self.lr)
+            high_res_prediction,without_refinement = _infer(high_res_image,resized_mask,self.encoder,self.decoder,current_reference,self.device,id,n_iters=n_iterations,downsize=current_scale,lr = lr, losses=self.losses)
             high_res_prediction = high_res_prediction.cpu().detach()
             
             # Set current reference as high res refence.
@@ -267,12 +269,12 @@ class FeatureRefinement:
 
             if self.save_intermediate_output:
                 curr_save_path = os.path.join(self.save_path,str(id)+"-refined-"+str(scale)+".exr")
-                save_image(current_reference,curr_save_path)
+                save_image(current_reference,curr_save_path,pretrained_lama=self.pretrained_lama)
 
                 curr_save_path = os.path.join(self.save_path,str(id)+"-unrefined-"+str(scale)+".exr")
-                save_image(without_refinement.cpu().detach(),curr_save_path)
+                save_image(without_refinement.cpu().detach(),curr_save_path,pretrained_lama=self.pretrained_lama)
 
 
-        current_reference = tensor_to_numpy(current_reference)
+        current_reference = tensor_to_numpy(current_reference,pretrained_lama=self.pretrained_lama)
         
         return current_reference

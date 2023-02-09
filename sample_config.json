@@ -1,11 +1,5 @@
 
 {
     "losses": {
-        "l1_loss": {
-            "kind" : "masked_l1_loss",
-            "weight_missing": 0,
-            "weight_known": 10,
-            "displacement_with_contrast": true
-        }
     }
 }
