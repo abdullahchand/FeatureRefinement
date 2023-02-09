@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from focal_frequency_loss import FocalFrequencyLoss as focalfreqloss
-from inference.utils.mask_utils import get_reigon_coordinates_for_cropping
+from models.utils.mask_utils import get_reigon_coordinates_for_cropping
 import torch
 import cv2
 import os

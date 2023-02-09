@@ -1,7 +1,7 @@
 import logging
 
-from inference.training.modules.ffc import FFCResNetGenerator
-from inference.training.modules.pix2pixhd import GlobalGenerator, MultiDilatedGlobalGenerator, \
+from models.training.modules.ffc import FFCResNetGenerator
+from models.training.modules.pix2pixhd import GlobalGenerator, MultiDilatedGlobalGenerator, \
     NLayerDiscriminator, MultidilatedNLayerDiscriminator
 
 def make_generator(config, kind, **kwargs):

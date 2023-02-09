@@ -7,10 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from inference.training.modules.base import get_activation, BaseDiscriminator
-from inference.training.modules.spatial_transform import LearnableSpatialTransformWrapper
-from inference.training.modules.squeeze_excitation import SELayer
-from inference.utils.utils import get_shape
+from models.training.modules.base import get_activation, BaseDiscriminator
+from models.training.modules.spatial_transform import LearnableSpatialTransformWrapper
+from models.training.modules.squeeze_excitation import SELayer
 
 
 class FFCSE_block(nn.Module):

@@ -78,9 +78,9 @@ def _l1_loss(
 def _infer(
     image : torch.Tensor, mask : torch.Tensor, 
     forward_front : nn.Module, forward_rears : nn.Module, 
-    ref_lower_res : torch.Tensor, orig_shape : tuple, devices : list, 
+    ref_lower_res : torch.Tensor, devices : list, 
     scale_ind : int, n_iters : int=15, lr : float=0.002,downsize = None):
-    """Performs inference with refinement at a given scale.
+    """Performs models with refinement at a given scale.
     Parameters
     ----------
     image : torch.Tensor
@@ -93,8 +93,6 @@ def _infer(
         the rear part of the inpainting network
     ref_lower_res : torch.Tensor
         the inpainting at previous scale, used as reference image
-    orig_shape : tuple
-        shape of the original input image before padding
     devices : list
         list of available devices
     scale_ind : int
@@ -116,7 +114,7 @@ def _infer(
         ref_lower_res = ref_lower_res.detach()
     with torch.no_grad():
         z1,z2 = forward_front(masked_image)
-    # Inference
+    # models
     mask = mask.to(devices)
     ekernel = torch.from_numpy(cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15)).astype(bool)).float()
     ekernel = ekernel.to(devices)
@@ -125,7 +123,8 @@ def _infer(
     z1.requires_grad, z2.requires_grad = True, True
 
     optimizer = Adam([z1,z2], lr=lr)
-    # get without refinement
+    # rescale the ref_low_res
+    # rescaled_ref_low_res = resize(ref_lower_res, (image.shape[0], image.shape[1]))
 
     # input_feat = (z1,z2)
     count = 0
@@ -136,7 +135,8 @@ def _infer(
         input_feat = (z1,z2)
         output_feat = forward_rears(input_feat)
         pred = output_feat
-
+        if count == 0:
+            without_refinement = output_feat
         if ref_lower_res is None:
             break
         losses = {}
