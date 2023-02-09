@@ -65,7 +65,7 @@ If we dont want to specify losses and use the default loss we can define the sam
 }
 ```
 
-To run :-
+To run and use in code:-
 
 ```python
 from feature_refinement import FeatureRefinement
