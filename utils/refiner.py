@@ -80,6 +80,7 @@ def _infer(
     forward_front : nn.Module, forward_rears : nn.Module, 
     ref_lower_res : torch.Tensor, devices : list, 
     scale_ind : int, n_iters : int=15, lr : float=0.002,downsize = None):
+
     """Performs models with refinement at a given scale.
     Parameters
     ----------
@@ -159,5 +160,5 @@ def _infer(
         count+=1
     # "pred" is the prediction after Plug-n-Play module
     inpainted = mask * pred + (1 - mask) * image
-    inpainted = inpainted.detach().cpu()
+    inpainted = inpainted
     return inpainted, without_refinement

@@ -1,0 +1,26 @@
+
+{
+    "losses": {
+        "perceptual_loss": {
+            "kind" : "resnet_pl",
+            "weight": 30,
+            "weights_path": "pretrained/ade20k/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth",
+            "normalise" : true,
+            "displacement_with_contrast": true,
+            "device_id": 7
+        },
+        "l1_loss": {
+            "kind" : "masked_l1_loss",
+            "weight_missing": 0,
+            "weight_known": 10,
+            "displacement_with_contrast": true
+        },
+        "adverserial_loss": {
+            "kind" : "non_saturating_with_r1",
+            "weight": 10,
+            "gp_coef": 0.001,
+            "mask_as_fake_target": true,
+            "allow_scale_mask": true
+        }
+    }
+}

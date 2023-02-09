@@ -17,11 +17,24 @@ import losses
 from utils.refiner import _infer
 from utils.exr_to_jpg import return_exr_to_jpg
 from utils.jpg_to_exr import return_jpg_to_exr
-from utils.utils import convert_image
+from utils.utils import convert_image, save_image,tensor_to_numpy
 import os
 from tqdm import tqdm
 
 class FeatureRefinement:
+    '''
+    Feature refinement class used for postprocessing of Albedos.
+
+    Parameters
+    ----------
+    config_path -> Path to the config file containing losses configs
+    checkpoint_path -> path to the model checkpoint
+    pretrained_lama -> wether to use pretrained lama.
+    use_cuda -> Wether to use gpu or not
+    model -> If given, uses this model istead of loading a model from checkpoint path.
+    save_intermediate_output -> Wether to save the intermediate results.
+    save_path -> path to save intermediate results
+    '''
     def __init__(
         self,
         config_path, 
@@ -30,10 +43,7 @@ class FeatureRefinement:
         model = None,
         pretrained_lama=False,
         save_intermediate_output = False,
-        save_path = "results/",
-        n_steps = 0,
-        difference = 256,
-        lr = 0.002
+        save_path = "results/"
     ) -> None:
         # configuring device
         self.device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
@@ -73,6 +83,18 @@ class FeatureRefinement:
         self.encoder.to(self.device)
 
     def split_model(self,model):
+        '''
+        Helper function to split the lama model into encoder and decoder.
+
+        Parameters
+        ----------
+        model -> Loaded lama model
+
+        Returns
+        -------
+        encoder -> nn.Module
+        decoder -> nn.Module
+        '''
         n_resnet_blocks = 0
         first_resblock_ind = 0
         found_first_resblock = False
@@ -87,17 +109,53 @@ class FeatureRefinement:
         return encoder,decoder
     
     def freeze_module(self,module):
+        '''
+        Helper function to freeze a model or part of model.
+
+        Parameters
+        ---------
+        module -> The module to be frozen
+
+        Returns
+        ------
+        module -> Frozen module
+        '''
+
         for param in module.parameters():
             param.requires_grad = False
         return module
     
     def unfreeze_module(self,module):
+        '''
+        Helper function to unfreeze a model or part of model.
+
+        Parameters
+        ---------
+        module -> The module to be unfrozen
+
+        Returns
+        ------
+        module -> unFrozen module
+        '''
+        
         for param in module.parameters():
             param.requires_grad = True
         return module
 
 
     def create_images_pyramid(self,high_res_image, high_res_mask, smallest_size, n_steps, difference = 128):
+        '''
+        Helper function to create images and masks of different scales to be used in iterative  fixing of the high res image
+
+        Parameters
+        ---------
+        high_res_image -> The actual high res image
+        high_res_mask -> The actual high res mask
+        smallest_size -> The size of the startin low reference image i.e the smallest size of image
+        n_steps -> defines the desired number of images to be produced. If an image during a step becomes smaller than the smallest size, it returns the images and masks created before this point.
+        difference -> difference between each step.  Ex. If image size is (1024,1024), n_step is 3, smalles_size is (256,256) and difference is 256, It will produce image sizes of (1024,768,512)
+
+        '''
         images = []
         masks = []
         scales = []
@@ -129,22 +187,23 @@ class FeatureRefinement:
 
         return images, masks, scales
 
-    def tensor_to_numpy(self,image):
-        inter_output = image.numpy()
-        inter_output = inter_output.squeeze(0)
-        inter_output = np.moveaxis(inter_output,0,-1)
-        if self.pretrained_lama:
-            # reverting preprocessing steps
-            inter_output = np.clip(inter_output * 255, 0, 255).astype('uint8')
-            inter_output = return_jpg_to_exr(inter_output)
-        return inter_output
-
-    def save_image(self,image,save_path):
-        inter_output = self.tensor_to_numpy(image)
-        cv2.imwrite(save_path, inter_output)
 
 
-    def feature_refinement(self, high_res_image, mask, size = (512,512),n_iterations = 1):
+    def feature_refinement(self, high_res_image, mask, size = (512,512),n_iterations = 1, n_steps = 0,difference = 256, lr = 0.002,**kwargs):
+        '''
+        Performs the feature refinement on the given image and mask.
+        It starts by creating images defined in the class through n_steps, difference and
+
+        Parameters
+        ----------
+        high_res_image -> The actual high res map
+        mask -> The actual high res mask
+        size -> starting size / size of the first reference image to be inpainted.
+        n_steps -> If we require step based refinement.
+        difference -> The difference between each image step. Ex. If image size is (1024,1024), n_step is 3, smalles_size is (256,256) and difference is 256, It will produce image sizes of (1024,768,512)
+        n_iterations -> number of iterations to perform for optimisation
+        lr -> Learning rate of the model.
+        '''
         # Conver tot jpg if pretrained lama
         if self.pretrained_lama:
             high_res_image = return_exr_to_jpg(high_res_image)
@@ -172,7 +231,11 @@ class FeatureRefinement:
         # Get low res output
         
         low_res_output = self.model(masked_image)
+        low_res_output = mask * low_res_resized_mask + (1 - mask) * low_res_output
         low_res_output = low_res_output.cpu().detach()
+
+        save_image(low_res_output)
+        
         current_reference = low_res_output
         current_scale = size
         for id,(inter_image,inter_mask,scale) in enumerate(zip(images,masks,scales)):
@@ -199,12 +262,12 @@ class FeatureRefinement:
 
             if self.save_intermediate_output:
                 curr_save_path = os.path.join(self.save_path,str(id)+"-refined-"+str(scale)+".exr")
-                self.save_image(current_reference,curr_save_path)
+                save_image(current_reference,curr_save_path)
 
                 curr_save_path = os.path.join(self.save_path,str(id)+"-unrefined-"+str(scale)+".exr")
-                self.save_image(without_refinement.cpu().detach(),curr_save_path)
+                save_image(without_refinement.cpu().detach(),curr_save_path)
 
 
-        current_reference = self.tensor_to_numpy(current_reference)
+        current_reference = tensor_to_numpy(current_reference)
         
         return current_reference
