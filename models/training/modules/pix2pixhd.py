@@ -8,9 +8,9 @@ from collections import defaultdict
 import numpy as np
 import torch.nn as nn
 
-from models.training.modules.base import BaseDiscriminator, deconv_factory, get_conv_block_ctor, get_norm_layer, get_activation
-from models.training.modules.ffc import FFCResnetBlock
-from models.training.modules.multidilated_conv import MultidilatedConv
+from .base import BaseDiscriminator, deconv_factory, get_conv_block_ctor, get_norm_layer, get_activation
+from .ffc import FFCResnetBlock
+from .multidilated_conv import MultidilatedConv
 
 class DotDict(defaultdict):
     # https://stackoverflow.com/questions/2352181/how-to-use-a-dot-to-access-members-of-dictionary

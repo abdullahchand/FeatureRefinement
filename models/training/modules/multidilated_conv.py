@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import random
-from models.training.modules.depthwise_sep_conv import DepthWiseSeperableConv
+from .depthwise_sep_conv import DepthWiseSeperableConv
 
 class MultidilatedConv(nn.Module):
     def __init__(self, in_dim, out_dim, kernel_size, dilation_num=3, comb_mode='sum', equal_dim=True,

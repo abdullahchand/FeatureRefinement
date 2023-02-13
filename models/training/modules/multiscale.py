@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.training.modules.base import get_conv_block_ctor, get_activation
-from models.training.modules.pix2pixhd import ResnetBlock
+from .base import get_conv_block_ctor, get_activation
+from .pix2pixhd import ResnetBlock
 
 
 class ResNetHead(nn.Module):

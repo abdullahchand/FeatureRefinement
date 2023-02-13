@@ -5,7 +5,7 @@ from kornia.filters import gaussian_blur2d
 # from kornia.geometry.transform import resize
 # from kornia.morphology import erosion
 from torch.nn import functional as F
-from utils.mask_utils import convert_to_1D
+from .mask_utils import convert_to_1D
 
 def resize_mask(mask,size=(512,512)):
     resized_mask = cv2.resize(mask,size)

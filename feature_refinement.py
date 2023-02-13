@@ -8,16 +8,16 @@ import numpy as np
 import torch
 
 import models
-from models.model_loading import load_albedo_model
-from models.training.modules.ffc import FFCResnetBlock
-from utils.resize_utils import resize_mask, downscale, resize_image
-from utils.mask_utils import convert_to_1D
+from .models.model_loading import load_albedo_model
+from .models.training.modules.ffc import FFCResnetBlock
+from .utils.resize_utils import resize_mask, downscale, resize_image
+from .utils.mask_utils import convert_to_1D
 from torchvision import transforms
 import losses
-from utils.refiner import _infer
-from utils.exr_to_jpg import return_exr_to_jpg
-from utils.jpg_to_exr import return_jpg_to_exr
-from utils.utils import convert_image, save_image,tensor_to_numpy
+from .utils.refiner import _infer
+from .utils.exr_to_jpg import return_exr_to_jpg
+from .utils.jpg_to_exr import return_jpg_to_exr
+from .utils.utils import convert_image, save_image,tensor_to_numpy
 import os
 from tqdm import tqdm
 

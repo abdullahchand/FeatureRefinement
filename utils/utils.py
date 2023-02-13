@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-from utils.jpg_to_exr import return_jpg_to_exr
+from .jpg_to_exr import return_jpg_to_exr
 
 def convert_image(image):
     img = image

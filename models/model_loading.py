@@ -1,6 +1,6 @@
 import torch
 import sys
-from models.training.modules.ffc import FFCResNetGenerator
+from .training.modules.ffc import FFCResNetGenerator
 
 
 def load_model_old_lama(model_param, checkpoint_path,device):

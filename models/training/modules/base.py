@@ -4,8 +4,8 @@ from typing import Tuple, List
 import torch
 import torch.nn as nn
 
-from models.training.modules.depthwise_sep_conv import DepthWiseSeperableConv
-from models.training.modules.multidilated_conv import MultidilatedConv
+from .depthwise_sep_conv import DepthWiseSeperableConv
+from .multidilated_conv import MultidilatedConv
 
 
 class BaseDiscriminator(nn.Module):
