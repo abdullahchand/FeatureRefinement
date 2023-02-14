@@ -38,7 +38,7 @@ class FeatureRefinement:
         self, 
         checkpoint_path,
         use_cuda,
-        config_path=".sample_config.json",
+        config_path="sample_config.json",
         model = None,
         pretrained_lama=False,
         save_intermediate_output = False,
