@@ -6,7 +6,6 @@ import cv2
 import numpy as np
 
 import torch
-import models
 from .models.model_loading import load_albedo_model
 from .models.training.modules.ffc import FFCResnetBlock
 from .utils.resize_utils import resize_mask, downscale, resize_image
@@ -45,7 +44,9 @@ class FeatureRefinement:
         save_path = "results/"
     ) -> None:
         # configuring device
+        print(torch.cuda.is_available())
         self.device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
+        print(self.device)
         
         self.save_intermediate_output = save_intermediate_output
         self.save_path = save_path
@@ -68,7 +69,7 @@ class FeatureRefinement:
             self.model=load_albedo_model(checkpoint_path=self.checkpoint_path,old_lama = self.pretrained_lama,device=self.device)
         else:
             self.model = model
-        
+        self.model.to(self.device)
         # Load and split model
         self.model.eval()
         self.encoder, self.decoder = self.split_model(self.model)
