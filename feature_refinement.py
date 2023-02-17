@@ -44,9 +44,7 @@ class FeatureRefinement:
         save_path = "results/"
     ) -> None:
         # configuring device
-        print(torch.cuda.is_available())
         self.device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
-        print(self.device)
         
         self.save_intermediate_output = save_intermediate_output
         self.save_path = save_path
