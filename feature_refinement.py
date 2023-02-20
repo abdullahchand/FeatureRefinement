@@ -99,7 +99,7 @@ class FeatureRefinement:
             elif not found_first_resblock:
                 first_resblock_ind += 1
         encoder = model.model[0:first_resblock_ind+1]
-        decoder = model.model[first_resblock_ind+n_resnet_blocks:]
+        decoder = model.model[first_resblock_ind:]
         return encoder,decoder
     
     def freeze_module(self,module):
