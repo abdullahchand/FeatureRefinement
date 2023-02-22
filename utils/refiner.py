@@ -120,9 +120,9 @@ def _infer(
     ekernel = torch.from_numpy(cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15)).astype(bool)).float()
     ekernel = ekernel.to(devices)
     image = image.to(devices)
+
     z1, z2 = z1.detach().to(devices), z2.detach().to(devices)
     z1.requires_grad, z2.requires_grad = True, True
-
     optimizer = Adam([z1,z2], lr=lr)
     # rescale the ref_low_res
     # rescaled_ref_low_res = resize(ref_lower_res, (image.shape[0], image.shape[1]))
@@ -134,6 +134,9 @@ def _infer(
     for idi in pbar:
         optimizer.zero_grad()
         input_feat = (z1,z2)
+        
+        torch.cuda.empty_cache()    
+
         output_feat = forward_rears(input_feat)
         pred = output_feat
         if count == 0:

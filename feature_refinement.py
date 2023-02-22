@@ -67,13 +67,15 @@ class FeatureRefinement:
             self.model=load_albedo_model(checkpoint_path=self.checkpoint_path,old_lama = self.pretrained_lama,device=self.device)
         else:
             self.model = model
-        self.model.to(self.device)
+        
+        self.model.to("cpu")
         # Load and split model
         self.model.eval()
         self.encoder, self.decoder = self.split_model(self.model)
         self.encoder = self.freeze_module(self.encoder)
         self.decoder = self.freeze_module(self.decoder)
         self.decoder.to(self.device)
+        #self.encoder.to("cpu")
         self.encoder.to(self.device)
 
     def split_model(self,model):
@@ -98,8 +100,8 @@ class FeatureRefinement:
                 found_first_resblock = True
             elif not found_first_resblock:
                 first_resblock_ind += 1
-        encoder = model.model[0:first_resblock_ind+1]
-        decoder = model.model[first_resblock_ind+n_resnet_blocks:]
+        encoder = model.model[0:first_resblock_ind]
+        decoder = model.model[first_resblock_ind:]
         return encoder,decoder
     
     def freeze_module(self,module):
@@ -234,7 +236,7 @@ class FeatureRefinement:
         # Get low res output
         
         low_res_output = self.model(masked_image)
-        low_res_output = low_res_resized_mask * low_res_image + (1 - low_res_resized_mask) * low_res_output
+        low_res_output = low_res_resized_mask * low_res_output + (1 - low_res_resized_mask) * low_res_image
         low_res_output = low_res_output.cpu().detach()
 
         if self.save_intermediate_output:
@@ -256,7 +258,7 @@ class FeatureRefinement:
             high_res_image = self.transform(inter_image)
             high_res_image = high_res_image.to(self.device)
             high_res_image = high_res_image.unsqueeze(0)
-            
+            #self.debug(high_res_image, resized_mask)
             # Get highres output
             high_res_prediction,without_refinement = _infer(high_res_image,resized_mask,self.encoder,self.decoder,current_reference,self.device,id,n_iters=n_iterations,downsize=current_scale,lr = lr, losses=self.losses)
             high_res_prediction = high_res_prediction.cpu().detach()
@@ -276,3 +278,10 @@ class FeatureRefinement:
         current_reference = tensor_to_numpy(current_reference,pretrained_lama=self.pretrained_lama)
         
         return current_reference
+    
+    def debug(self, image, mask):
+        masked_image = image * (1 - mask)
+        masked_image = torch.cat([masked_image, mask], dim=1)
+        masked_image = masked_image.to("cpu")
+
+        a=1
